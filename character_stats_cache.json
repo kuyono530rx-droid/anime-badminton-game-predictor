@@ -1,0 +1,74 @@
+{
+  "73935": {
+    "power": 100,
+    "agility": 95,
+    "stamina": 100,
+    "technique": 85,
+    "decision": 80,
+    "mental": 75,
+    "consistency": 90
+  },
+  "178510": {
+    "power": 85,
+    "agility": 75,
+    "stamina": 90,
+    "technique": 70,
+    "decision": 65,
+    "mental": 80,
+    "consistency": 75
+  },
+  "45627": {
+    "power": 85,
+    "agility": 95,
+    "stamina": 90,
+    "technique": 98,
+    "decision": 92,
+    "mental": 95,
+    "consistency": 90
+  },
+  "40881": {
+    "power": 85,
+    "agility": 95,
+    "stamina": 90,
+    "technique": 92,
+    "decision": 88,
+    "mental": 90,
+    "consistency": 93
+  },
+  "17": {
+    "power": 85,
+    "agility": 80,
+    "stamina": 95,
+    "technique": 75,
+    "decision": 70,
+    "mental": 90,
+    "consistency": 80
+  },
+  "40": {
+    "power": 90,
+    "agility": 85,
+    "stamina": 95,
+    "technique": 70,
+    "decision": 60,
+    "mental": 90,
+    "consistency": 80
+  },
+  "164471": {
+    "power": 95,
+    "agility": 90,
+    "stamina": 85,
+    "technique": 95,
+    "decision": 90,
+    "mental": 85,
+    "consistency": 80
+  },
+  "146156": {
+    "power": 75,
+    "agility": 85,
+    "stamina": 80,
+    "technique": 90,
+    "decision": 85,
+    "mental": 95,
+    "consistency": 90
+  }
+}
