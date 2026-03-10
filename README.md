@@ -44,17 +44,8 @@ export OPENAI_API_KEY=your_key_here
 ```
 
 ## How the su=imulation works
-run_ranking
-└── for each simulation
-    └── simulate_tournament
-        └── while bracket has more than 1 player
-            └── for each match in this round
-                └── simulate_match
-                    └── while no one has won 2 games
-                        └── simulate_game
-                            └── while game not finished
-                                └── simulate each rally
-                                
+run_ranking -> for each simulation -> simulate_tournament -> while bracket has more than 1 player -> for each match in this round -> simulate_match -> while no one has won 2 games -> simulate_game -> while game not finished -> simulate each rally
+
 ## Something else
 
 - The result is a ranking of the characters based on the number of wins
