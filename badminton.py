@@ -5,13 +5,30 @@ import random
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
+import time
+import urllib.error
 
 
+# create cache file
+CACHE_FILE = "character_stats_cache.json"
+
+def load_cache():
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def save_cache(cache):
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+
+# urls
 JIKAN_BASE_URL = "https://api.jikan.moe/v4"
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 DEFAULT_LLM_MODEL = "gpt-4.1-mini"
 
 
+# class characters
 @dataclass
 class Character:
     name: str
@@ -29,6 +46,7 @@ def sigmoid(value):
 
 
 def fetch_json(url):
+    time.sleep(0.5)  # avoid speed limit error
     request = urllib.request.Request(
         url,
         headers={
@@ -40,19 +58,31 @@ def fetch_json(url):
         return json.loads(response.read().decode("utf-8"))
 
 
-def post_json(url, payload, headers=None):
+def post_json(url, payload, headers=None, retries=5):
     request_headers = {"Content-Type": "application/json"}
     if headers:
         request_headers.update(headers)
 
-    request = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers=request_headers,
-        method="POST",
-    )
-    with urllib.request.urlopen(request, timeout=45) as response:
-        return json.loads(response.read().decode("utf-8"))
+    for attempt in range(retries):
+        try:
+            request = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers=request_headers,
+                method="POST",
+            )
+            with urllib.request.urlopen(request, timeout=45) as response:
+                return json.loads(response.read().decode("utf-8"))
+
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                wait_time = 2 * (attempt + 1)
+                print(f"OpenAI rate limited. Waiting {wait_time} seconds...")
+                time.sleep(wait_time)
+                continue
+            raise
+
+    raise RuntimeError("OpenAI request failed after retries.")
 
 
 def search_character(name):
@@ -174,9 +204,17 @@ def estimate_attributes(context):
     return json.loads(extract_response_text(response))
 
 
-def build_character(name):
+def build_character(name, cache):
     context = get_character_context(name)
-    stats = estimate_attributes(context)
+    cache_key = str(context["mal_id"])
+
+    if cache_key in cache:
+        stats = cache[cache_key]
+    else:
+        stats = estimate_attributes(context)
+        cache[cache_key] = stats
+        save_cache(cache)
+
     return Character(
         name=context["name"],
         power=stats["power"],
@@ -187,7 +225,6 @@ def build_character(name):
         mental=stats["mental"],
         consistency=stats["consistency"],
     )
-
 
 def point_win_prob(player_a, player_b, rally_count):
     fatigue_a = rally_count * max(0.15, (110 - player_a.stamina) / 220)
@@ -249,30 +286,33 @@ def simulate_match(player_a, player_b):
 def simulate_tournament(players):
     bracket = list(players)
     random.shuffle(bracket)
+
     total_wins = {player.name: 0 for player in players}
 
-    quarterfinal_winners = []
-    for index in range(0, 8, 2):
-        winner = simulate_match(bracket[index], bracket[index + 1])
-        total_wins[winner.name] += 1
-        quarterfinal_winners.append(winner)
+    while len(bracket) > 1:
 
-    semifinal_winners = []
-    for index in range(0, 4, 2):
-        winner = simulate_match(quarterfinal_winners[index], quarterfinal_winners[index + 1])
-        total_wins[winner.name] += 1
-        semifinal_winners.append(winner)
+        next_round = []
 
-    champion = simulate_match(semifinal_winners[0], semifinal_winners[1])
-    total_wins[champion.name] += 1
+        for i in range(0, len(bracket), 2):
+
+            if i + 1 >= len(bracket):
+                # odd number → bye
+                next_round.append(bracket[i])
+                continue
+
+            winner = simulate_match(bracket[i], bracket[i+1])
+            total_wins[winner.name] += 1
+            next_round.append(winner)
+
+        bracket = next_round
+
     return total_wins
 
 
 def run_ranking(names, simulations=200):
-    if len(names) != 8:
-        raise ValueError("This simplified version expects exactly 8 characters.")
-
-    players = [build_character(name) for name in names]
+    
+    cache = load_cache()
+    players = [build_character(name, cache) for name in names]
     win_totals = {player.name: 0 for player in players}
 
     for _ in range(simulations):
